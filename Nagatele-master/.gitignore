@@ -1,0 +1,7 @@
+node_modules/
+src/Commands/Economy/econ.sqlite
+src/Database/afk.sqlite
+
+# ChatFight sqlite runtime files (WAL/SHM are recreated automatically)
+src/Database/chatfight.sqlite-shm
+src/Database/chatfight.sqlite-wal

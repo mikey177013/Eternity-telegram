@@ -1,0 +1,51 @@
+{
+  "name": "zerotwo-telegram-bot",
+  "version": "2.1.0",
+  "description": "ZeroTwo — a modular Telegram bot by ETERNITY BOTS. Features economy, casino, Pokémon battles, card collection, and full moderation.",
+  "author": "sano.senxpai",
+  "main": "bot.js",
+  "keywords": [
+    "Telegram",
+    "Telegram-Bot",
+    "ZeroTwo",
+    "ETERNITY-BOTS",
+    "Pokemon",
+    "Casino",
+    "Cards",
+    "Economy",
+    "modular"
+  ],
+  "license": "SEE LICENSE IN LICENSE.md",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js",
+    "format": "prettier --write \"src/**/*.js\""
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.88",
+    "acrcloud": "^1.4.0",
+    "axios": "^1.13.2",
+    "canvas": "^3.2.0",
+    "chalk": "^4.1.1",
+    "dotenv": "^16.6.1",
+    "ffmpeg-static": "^5.3.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "fs-extra": "^11.1.0",
+    "moment-timezone": "^0.5.48",
+    "node-fetch": "^2.7.0",
+    "node-telegram-bot-api": "^0.61.0",
+    "parse-ms": "^3.0.0",
+    "pokenode-ts": "^1.20.0",
+    "sharp": "^0.34.5",
+    "sqlite3": "^5.1.6",
+    "telegraf": "^4.16.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "pm2": "^6.0.8",
+    "prettier": "^3.5.3"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
