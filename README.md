@@ -174,7 +174,7 @@ The MessageHandler auto-loads every file under src/Commands/*/*.js at boot. Owne
 
 ---
 
-##📦 Dependencies
+## 📦 Dependencies
 
 Package Purpose
 node-telegram-bot-api Telegram transport
@@ -188,7 +188,7 @@ parse-ms Cooldown formatting
 
 ---
 
-##🧪 Testing
+## 🧪 Testing
 
 Two smoke-test scripts are included:
 
@@ -201,7 +201,7 @@ Run these after making changes to ensure nothing is broken.
 
 ---
 
-##🤝 Credits
+## 🤝 Credits
 
 · Bot: Nagatele
 · Organization: ETERNITY BOTS
@@ -211,7 +211,7 @@ If you fork this project, please keep the credits intact. PRs are welcome.
 
 ---
 
-##📄 License
+## 📄 License
 
 See LICENSE for details.
 
