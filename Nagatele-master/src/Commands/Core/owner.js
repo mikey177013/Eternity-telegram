@@ -1,6 +1,6 @@
 module.exports = {
-  name: "owner",
-  aliases: ["creator", "dev"],
+  name: "datafile",
+  aliases: ["creator", "dev", "owner"],
   category: "Core",
   description: "About the bot owner",
 
