@@ -9,8 +9,8 @@ Nagatele is a feature-rich Telegram bot built with Node.js. It uses a clean comm
 
 ## ✨ Features
 
-***
-card , economy and gamble version is not released yet ***
+```
+card , economy and gamble version is not released yet ```
 
 ### 🤖 AI
 - **`.chat`** — conversational AI
