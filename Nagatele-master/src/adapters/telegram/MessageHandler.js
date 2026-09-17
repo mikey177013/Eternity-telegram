@@ -287,14 +287,14 @@ class MessageHandler {
     try {
       // Convert to lowercase for comparison
       const lowerUrl = url.toLowerCase();
-      
+
       // Check if it's any of the allowed domains
       for (const domain of this.allowedDomains) {
         if (lowerUrl.includes(domain.toLowerCase())) {
           return true;
         }
       }
-      
+
       return false;
     } catch (error) {
       console.error('Error checking link:', error);
@@ -309,15 +309,15 @@ class MessageHandler {
    */
   extractLinks(text) {
     if (!text) return [];
-    
+
     const links = [];
     let match;
-    
+
     // Use the link regex to find all URLs
     while ((match = this.linkRegex.exec(text)) !== null) {
       links.push(match[0]);
     }
-    
+
     return links;
   }
 
@@ -328,18 +328,18 @@ class MessageHandler {
    */
   hasDisallowedLinks(text) {
     const links = this.extractLinks(text);
-    
+
     if (links.length === 0) {
       return false; // No links found
     }
-    
+
     // Check each link
     for (const link of links) {
       if (!this.isLinkAllowed(link)) {
         return true; // Found at least one disallowed link
       }
     }
-    
+
     return false; // All links are allowed
   }
 
@@ -420,7 +420,7 @@ class MessageHandler {
       'mine',
       'egg'
     ];
-    
+
     return casinoCommands.includes(cmdName.toLowerCase());
   }
 
@@ -433,7 +433,7 @@ class MessageHandler {
   checkCasinoRestriction(chatId, cmdName) {
     // Convert chatId to number for comparison
     const chatIdNum = Number(chatId);
-    
+
     if (this.isCasinoCommand(cmdName)) {
       if (chatIdNum !== this.casinoGroupId) {
         return {
@@ -444,7 +444,7 @@ class MessageHandler {
         };
       }
     }
-    
+
     return { allowed: true, message: '' };
   }
 
@@ -696,19 +696,6 @@ class MessageHandler {
     try {
       console.log('🔄 Loading handlers...');
 
-      // Load Card Handler
-      try {
-        const cardHandler = require('../../Handlers/card.js');
-        if (typeof cardHandler === 'function') {
-          await cardHandler(this.client);
-          console.log('✅ Card handler loaded');
-        } else {
-          console.log('⚠️ card.js handler is empty/not a function — skipped');
-        }
-      } catch (e) {
-        console.error('❌ Error loading card handler:', e.message);
-      }
-
       // Load Clan Handler
       try {
         const clanHandler = require('../../Handlers/Clan.js');
@@ -738,7 +725,7 @@ class MessageHandler {
       // Load any other handlers
       const handlersPath = path.join(__dirname, '../../Handlers');
       const handlerFiles = fs.readdirSync(handlersPath).filter(f =>
-        f.endsWith('.js') && !['card.js', 'Clan.js', 'poke.js', 'AutoDownloader.js'].includes(f)
+        f.endsWith('.js') && !['Clan.js', 'poke.js', 'AutoDownloader.js'].includes(f)
       );
 
       for (const file of handlerFiles) {
@@ -843,12 +830,6 @@ class MessageHandler {
                 return;
             }
 
-            // =========== NEW: Handle collection pagination ===========
-            else if (data.startsWith('collection_page_')) {
-                await this.handleCollectionCallback(callbackQuery);
-                return;
-            }
-
             // =========== Handle leaderboard switching ===========
             else if (data.startsWith('lb_')) {
                 await this.handleLeaderboardCallback(callbackQuery);
@@ -861,30 +842,7 @@ class MessageHandler {
                 return;
             }
 
-            // =========== Handle trade accept/cancel ===========
-            else if (data.startsWith('trade_accept_') || data.startsWith('trade_cancel_')) {
-                await this.handleTradeCallback(callbackQuery);
-                return;
-            }
-
             // Handle other callbacks...
-            else if (data.startsWith('card_')) {
-                const action = data.split('_')[1];
-                const cardId = data.split('_')[2];
-
-                if (action === 'deck') {
-                    // Toggle card in deck
-                    const result = await this.client.toggleCardInDeck?.(cardId, userId);
-                    if (result?.success) {
-                        await this.client.bot.sendMessage(chatId,
-                            result.added ? 
-                            '✅ Card added to your deck!' : 
-                            '✅ Card removed from your deck!',
-                            { parse_mode: 'Markdown' }
-                        );
-                    }
-                }
-            }
             else if (data === 'waifu_another') {
                 const waifuCommand = this.commands.get('waifu');
                 if (waifuCommand) {
@@ -973,85 +931,7 @@ class MessageHandler {
   }
 
   /**
-   * Handle trade accept/cancel inline button callbacks
-   */
-  async handleTradeCallback(callbackQuery) {
-    try {
-      const cardManager = require('../../Database/cardManager');
-      const data = callbackQuery.data;
-      const chatId = callbackQuery.message.chat.id;
-      const userId = callbackQuery.from.id.toString();
-
-      const isAccept = data.startsWith('trade_accept_');
-      const tradeId = data.replace(isAccept ? 'trade_accept_' : 'trade_cancel_', '');
-
-      const trade = await cardManager.getTrade(tradeId);
-      if (!trade) {
-        return await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-          text: '❌ Trade not found or expired',
-          show_alert: true
-        });
-      }
-
-      if (trade.status !== 'pending') {
-        return await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-          text: `❌ Trade is already ${trade.status}`,
-          show_alert: true
-        });
-      }
-
-      if (isAccept) {
-        if (String(trade.target_id) !== userId) {
-          return await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-            text: '❌ Only the trade recipient can accept this trade',
-            show_alert: true
-          });
-        }
-        const ok = await cardManager.acceptTrade(tradeId);
-        if (ok) {
-          await this.client.bot.answerCallbackQuery(callbackQuery.id, { text: '✅ Trade accepted!' });
-          await this.client.sendMessage(chatId,
-            `✅ *Trade Confirmed!*\n\n*Trade ID:* \`${tradeId}\`\n\n🔄 Cards have been swapped successfully!`,
-            { parse_mode: 'Markdown' }
-          );
-        } else {
-          await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-            text: '❌ Failed to accept trade. Cards may no longer be available.',
-            show_alert: true
-          });
-        }
-      } else {
-        // Cancel
-        if (String(trade.proposer_id) !== userId && String(trade.target_id) !== userId) {
-          return await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-            text: '❌ Only the proposer or target can cancel',
-            show_alert: true
-          });
-        }
-        const ok = await cardManager.cancelTrade(tradeId);
-        if (ok) {
-          await this.client.bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Trade cancelled' });
-          await this.client.sendMessage(chatId, `❌ Trade \`${tradeId}\` has been cancelled.`, { parse_mode: 'Markdown' });
-        } else {
-          await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-            text: '❌ Failed to cancel trade',
-            show_alert: true
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Trade callback error:', err);
-      try {
-        await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-          text: '❌ Error processing trade',
-          show_alert: true
-        });
-      } catch (_) {}
-    }
-  }
-
-  /**
-   * Handle leaderboard switching callback (lb_mana, lb_card, lb_pokemon)
+   * Handle leaderboard switching callback (lb_mana, lb_pokemon)
    */
   async handleLeaderboardCallback(callbackQuery) {
     try {
@@ -1072,10 +952,8 @@ class MessageHandler {
       const type = data.replace('lb_', '');
       const {
         fetchManaLeaderboard,
-        fetchCardLeaderboard,
         fetchPokemonLeaderboard,
         renderManaBoard,
-        renderCardBoard,
         renderPokemonBoard,
         kbForType,
       } = lbCmd._internal;
@@ -1083,8 +961,6 @@ class MessageHandler {
       let body;
       if (type === 'mana') {
         body = await renderManaBoard(this.client, await fetchManaLeaderboard(), viewerId);
-      } else if (type === 'card') {
-        body = await renderCardBoard(this.client, await fetchCardLeaderboard(), viewerId);
       } else if (type === 'pokemon') {
         body = await renderPokemonBoard(this.client, await fetchPokemonLeaderboard(), viewerId);
       } else {
@@ -1157,97 +1033,6 @@ class MessageHandler {
           show_alert: false,
         });
       } catch (_) {}
-    }
-  }
-
-  /**
-   * Handle collection pagination callback
-   */
-  async handleCollectionCallback(callbackQuery) {
-    try {
-        const data = callbackQuery.data;
-        const chatId = callbackQuery.message.chat.id;
-        const messageId = callbackQuery.message.message_id;
-        const userId = callbackQuery.from.id;
-        const fromName = callbackQuery.from.first_name || 'User';
-
-        console.log(`Collection callback: ${data} from ${userId}`);
-
-        if (data.startsWith('collection_page_')) {
-            // Format: collection_page_targetUserId_pageNumber
-            const parts = data.split('_');
-            if (parts.length < 4) {
-                await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-                    text: "❌ Invalid callback data",
-                    show_alert: false
-                });
-                return;
-            }
-
-            const targetUserId = parts[2];
-            const page = parseInt(parts[3]);
-
-            // Only allow the collection owner to use the buttons
-            if (userId.toString() !== targetUserId) {
-                await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-                    text: "❌ This is not your collection!",
-                    show_alert: true
-                });
-                return;
-            }
-
-            if (isNaN(page) || page < 1) {
-                await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-                    text: "❌ Invalid page number",
-                    show_alert: false
-                });
-                return;
-            }
-
-            // Get the collection command
-            const collectionCmd = this.commands.get('collection');
-            if (!collectionCmd) {
-                await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-                    text: "❌ Collection command not found",
-                    show_alert: false
-                });
-                return;
-            }
-
-            // Create a fake M object for the command
-            const fakeM = {
-                from: { 
-                    id: targetUserId,
-                    first_name: fromName,
-                    username: callbackQuery.from.username
-                },
-                chat: { id: chatId },
-                message_id: messageId
-            };
-
-            // Execute collection command in edit mode
-            await collectionCmd.execute(this.client, page.toString(), fakeM, true);
-
-            // Answer the callback query
-            await this.client.bot.answerCallbackQuery(callbackQuery.id);
-
-        } else {
-            await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-                text: "❌ Unknown callback",
-                show_alert: false
-            });
-        }
-
-    } catch (err) {
-        console.error('Collection callback error:', err);
-        try {
-            await this.client.bot.answerCallbackQuery(callbackQuery.id, {
-                text: "❌ Error processing request",
-                show_alert: false
-            });
-        } catch (e) {
-            // Ignore
-        }
     }
   }
 
@@ -1388,7 +1173,7 @@ class MessageHandler {
           } catch (e) {
             // Ignore deletion errors
           }
-          
+
           // Mute user for 5 minutes
           await this.muteUser(chatId, userId, 5 * 60 * 1000, 'sending disallowed links', msg, false);
           return;
